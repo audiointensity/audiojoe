@@ -14,29 +14,29 @@ Now, there's an element of chance of exactly how this schedule is generated. The
 When running it, it will take some time (seconds to minutes depending on your computer and the size of the video) before anything happens since FFmpeg has to convert the movie audio to WAV before sending it to the program. VLC will then start. The program generates the instructions/encouragements and writes them as subtitles to be played along the movie. Each time you run the program, the subtitles are going to be different so maybe you can try again tomorrow if denied today.
 
 # How to use it on Windows
-1. Extract all the files from the .zip archive to a folder.
+(1) Extract all the files from the .zip archive to a folder.
 
-2A. Find a movie to analyze and drag-and-drop it onto the audiojoe.bat file.
+(2A). Find a movie to analyze and drag-and-drop it onto the audiojoe.bat file.
 
 OR:
 
-2B. Open a command line prompt (Windows-button -> Run -> Cmd.exe) and navigate to the correct folder.
+(2B). Open a command line prompt (Windows-button -> Run -> Cmd.exe) and navigate to the correct folder.
 Suppose the movie you want to analyze is called Movie1.wmv. In that case, enter
 
     audiojoe.bat Movie1.wmv
     
 and press Enter. 
 
-3. Finally, enter the chance to cum as a whole number between 0 and 100 or just press Enter if 50 % is okay.
+(3). Finally, enter the chance to cum as a whole number between 0 and 100 or just press Enter if 50 % is okay.
 
 # How to use it on Unix
-1. Extract all the files from the .zip archive to a folder.
+(1). Extract all the files from the .zip archive to a folder.
 
-(A) Find a movie to analyze and drag-and-drop it onto the audiojoe.sh file.
+(2A) Find a movie to analyze and drag-and-drop it onto the audiojoe.sh file.
 
 OR 
 
-(B) Open a terminal window and navigate to the correct folder.
+(2B) Open a terminal window and navigate to the correct folder.
 Suppose the movie you want to analyze is called Movie1.wmv.
 In that case, enter
 
@@ -44,7 +44,7 @@ In that case, enter
 
 and press Enter. 
 
-3. Finally, enter the chance to cum as a whole number between 0 and 100 or just press Enter if 50 % is okay.
+(3). Finally, enter the chance to cum as a whole number between 0 and 100 or just press Enter if 50 % is okay.
 
 # Compiling from source on Windows
 Compiling and archiving can be done in one command using the create-release-windows.sh script. Observe that this requires a Bash shell to run, which is included in Cygwin or Msysgit, for example.
