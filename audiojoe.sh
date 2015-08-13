@@ -1,4 +1,6 @@
 #!/bin/bash
+SCRIPTPATH="dirname $0"
+
 VLC=$(which vlc)
 VLC="/C/Program Files (x86)/VideoLAN/VLC/vlc.exe"
 if [ ! -e "$VLC" ]; then
@@ -32,7 +34,7 @@ fi
 
 args=
 for f in "$@"; do
-	"$FFMPEG" -i "$f" -vn -acodec pcm_s16le -ar 8000 -ac 1 -f wav -y - 2>/dev/null | ./audiojoe $c > "$f.srt"
+	"$FFMPEG" -i "$f" -vn -acodec pcm_s16le -ar 8000 -ac 1 -f wav -y - 2>/dev/null | "$SCRIPTPATH/audiojoe" $c > "$f.srt"
 	args=" ""$f"" --sub-file= ""$f.srt"" "
 done
 if [ ! -z "$args" ]; then
