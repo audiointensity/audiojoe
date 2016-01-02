@@ -171,8 +171,8 @@ void sub_build_up(signed long *intensity_timeline, int peak_x,
 		  int min_time, int max_time, float threshold) {
   const signed long peak_intensity = intensity_timeline[peak_x];
   int i;
-  // Find point min_time to max_time seconds before highest peak 
-  // where intensity is going above the threshold
+  // Find point min_time to max_time seconds before highest peak where 
+  //  intensity is going above the threshold
   for(i = peak_x - min_time/SAMPLE_T; 
 	
       i > max(0, peak_x - max_time/SAMPLE_T) 
@@ -289,7 +289,7 @@ void export_sub(subtitle sub) {
   int start_minutes = seconds2timestamp_minutes(sub.start_seconds);
   int start_seconds = seconds2timestamp_seconds(sub.start_seconds);
 	
-  int end_time = sub.start_seconds + sub.duration_seconds;
+  int end_time    = sub.start_seconds + sub.duration_seconds;
   int end_hours   = seconds2timestamp_hours(end_time);
   int end_minutes = seconds2timestamp_minutes(end_time);
   int end_seconds = seconds2timestamp_seconds(end_time);
