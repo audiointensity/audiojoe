@@ -18,19 +18,13 @@ const float ENCOURAGING_PHRASE_FREQUENCY = 0.2f;
 #ifdef _WIN32
  #include <io.h>
  #include <fcntl.h>
+ #define NOMINMAX
  #include <Windows.h>
  #include <wincrypt.h>
 #endif
 
-void read_wav_header(unsigned int *samp_rate, unsigned int *bits_per_samp,
-		     unsigned int *num_samp);
-int read_wav_data(int *data, unsigned int samp_rate,
-		  unsigned int bits_per_samp, unsigned int num_samp);
-int conv_bit_size(unsigned int in, int bps);
-
-int findpeaks(signed long* v, int startind, int endind, int *peakx, int *peaky, int *peakprom);
-void select_most_prom(int *peakprom, int *peakx, int *peaky, int n, int k);
-void remove_close_peaks(int *peakx, int *peakprom, int npeaks, const int min_x_distance);
+#include "audiopeak.h"
+#include "wavread.h"
 
 void gen_sub_peak(signed long *intensity_timeline, int *peakx, int npeaks);
 void export_subs();
@@ -68,17 +62,6 @@ float randomf() {
   return r;				
 }
 
-#ifndef _WIN32
-int max(int a, int b) {
-  return a > b ? a : b;
-}
-int min(int a, int b) {
-  return a < b ? a : b;
-}
-#endif
-int filter(int *data, int i) {
-  return abs(data[i] - data[i-4]);
-}
 
 // Sample time (inverse of sample frequency)
 float SAMPLE_T = 1.0f; // Declared globally for convenience
@@ -333,217 +316,4 @@ void export_subs() {
   for(i = 0; i < sub_i; i++) {
     export_sub(subtitles[i]);
   }
-}
-
-// Place the k most prominent peaks first in the arrays (in-place)
-void select_most_prom(int *peakprom, int *peakx, int *peaky, int n, int k) {
-  int i, minIndex, minValue;
-  for(i=0; i < k; i++) {
-    minIndex = i;
-    minValue = peakprom[i];
-    int j;
-    for(j = i+1; j < n; j++) {
-      if (peakprom[j] > minValue) {
-	minIndex = j;
-	minValue = peakprom[j];
-      }
-    }
-    //swap list[i] and list[minIndex]
-    int temp = peakprom[i];
-    peakprom[i] = peakprom[minIndex];
-    peakprom[minIndex] = temp;
-    temp = peakx[i];
-    peakx[i] = peakx[minIndex];
-    peakx[minIndex] = temp;
-    temp = peaky[i];
-    peaky[i] = peaky[minIndex];
-    peaky[minIndex] = temp;
-  }
-}
-
-// "Remove" peaks that are too close to another more prominent peak by setting their prominence to 0
-void remove_close_peaks(int *peakx, int *peakprom, int npeaks, const int min_x_distance) {
-  int i,j;
-  for(i = 0; i < npeaks; i++) {
-    for(j = 0; j < i; j++) {
-      if (abs(peakx[i] - peakx[j]) < min_x_distance) {
-	if(peakprom[i] < peakprom[j]) {
-	  peakprom[i] = 0;
-	  break;
-	} else
-	  peakprom[j] = 0;
-      }
-    }		
-  }
-}
-
-// Return the index of the largest element with index between startind and endind in v.
-int indexOfMax(int *v, int startind, int endind) {
-  int maxEl;
-  int is_init = 0;
-  int i, index;
-  for(i = startind; i <= endind; i++) {
-    if (!is_init || v[i] > maxEl) {
-      maxEl = v[i];
-      index = i;
-      is_init = 1;
-    }
-  }
-  return index;
-}
-// Write x, y (height), and prominence of peaks found in the values of v.
-int findpeaks(signed long* v, int startind, int endind, int *peakx, int *peaky, int *peakprom) {
-  if (startind > endind) {
-    if(DEBUG)printf("(in findpeaks()) Warning: startindex > endindex");
-    return 0;
-  }
-  const int MAX_PEAKS = endind - startind + 1;
-  if(DEBUG)printf("len:%d, ", MAX_PEAKS);
-  int peaks_size = 0;
-  int minlocs[MAX_PEAKS];
-  int minlocs_size = 0;
-  int i;
-  for (i = startind+1; i < endind-1; i++) {
-    if (v[i-1] < v[i] && v[i] >= v[i+1]) {
-      if (minlocs_size == 0 && peaks_size == 0) {
-	// Ensure that there's a minimum before all peaks
-	minlocs[minlocs_size++] = v[startind]; 
-      }
-      peaky[peaks_size] = v[i];
-      peakx[peaks_size] = i;
-      peaks_size++;
-    }
-    if (v[i-1] > v[i] && v[i] <= v[i+1])
-      minlocs[minlocs_size++] = v[i]; 
-  }
-  if (minlocs_size == peaks_size) {
-    // Ensure that there's a minimum after all peaks
-    minlocs[minlocs_size++] = v[endind];// Add the last point as minimum
-  }
-	
-  int N = peaks_size;
-  if(DEBUG) printf("peaks:%d\n", N);
-  for(i = 0; i < N; i++)
-    peakprom[i] = 0;
-  int s;
-  for(s = 0; s < N; s++) { 
-    if(DEBUG)printf("\r%d", s);
-    int e;
-    for(e = s+1; e < N+1; e++) {
-      // Current interval: [s, e]
-      // Get the highest peak of current interval
-      int h = indexOfMax(peaky, s, e);
-      // Update prominence of the peak
-      peakprom[h] = max(peakprom[h], peaky[h] - max(minlocs[s], minlocs[e]));
-    }
-  }
-  if(DEBUG)printf("\n");
-  return N;
-}
-
-// Read WAV header information (like in a .wav file) from stdin
-void read_wav_header(unsigned int *samp_rate, unsigned int *bits_per_samp,
-		     unsigned int *num_samp)
-{
-  unsigned char buf[256];
-
-  /* ChunkID (RIFF for little-endian, RIFX for big-endian) */
-  fread(buf, 1, 4, stdin);
-  buf[4] = '\0';
-  if (strcmp((char*)buf, "RIFF")) exit(EXIT_FAILURE);
-  /* ChunkSize */
-  fread(buf, 1, 4, stdin);
-  /* Format */
-  fread(buf, 1, 4, stdin);
-  buf[4] = '\0';
-  if (strcmp((char*)buf, "WAVE")) exit(EXIT_FAILURE);
-
-  /* Subchunk1ID */
-  fread(buf, 1, 4, stdin);
-  buf[4] = '\0';
-  if (strcmp((char*)buf, "fmt ")) exit(EXIT_FAILURE);
-  /* Subchunk1Size (16 for PCM) */
-  fread(buf, 1, 4, stdin);
-  if (buf[0] != 16 || buf[1] || buf[2] || buf[3]) exit(EXIT_FAILURE);
-  /* AudioFormat (PCM = 1, other values indicate compression) */
-  fread(buf, 1, 2, stdin);
-  if (buf[0] != 1 || buf[1]) exit(EXIT_FAILURE);
-  /* NumChannels (Mono = 1, Stereo = 2, etc) */
-  fread(buf, 1, 2, stdin);
-  unsigned int num_ch = buf[0] + (buf[1] << 8);
-  if (num_ch != 1) exit(EXIT_FAILURE);
-  /* SampleRate (8000, 44100, etc) */
-  fread(buf, 1, 4, stdin);
-  *samp_rate = buf[0] + (buf[1] << 8) +
-    (buf[2] << 16) + (buf[3] << 24);
-  /* ByteRate (SampleRate * NumChannels * BitsPerSample / 8) */
-  fread(buf, 1, 4, stdin);
-  const unsigned int byte_rate = buf[0] + (buf[1] << 8) +
-    (buf[2] << 16) + (buf[3] << 24);
-  /* BlockAlign (NumChannels * BitsPerSample / 8) */
-  fread(buf, 1, 2, stdin);
-  const unsigned int block_align = buf[0] + (buf[1] << 8);
-  /* BitsPerSample */
-  fread(buf, 1, 2, stdin);
-  *bits_per_samp = buf[0] + (buf[1] << 8);
-  if (byte_rate != ((*samp_rate * num_ch * *bits_per_samp) >> 3))
-    exit(EXIT_FAILURE);
-  if (block_align != ((num_ch * *bits_per_samp) >> 3))
-    exit(EXIT_FAILURE);
-
-  /* Subchunk2ID */
-  fread(buf, 1, 4, stdin);
-  buf[4] = '\0';
-  //printf("s%ss", buf);
-  if (!strcmp((char*)buf, "LIST")) {
-    fread(buf, 1, 4, stdin);
-    const unsigned int list_chunk_length = buf[0] + (buf[1] << 8) + (buf[2] << 16) + (buf[3] << 24);
-
-    /* Skip LIST chunk */
-    fread(buf, 1, list_chunk_length, stdin);
-		
-    /* Subchunk2ID */
-    fread(buf, 1, 4, stdin);
-    buf[4] = '\0';
-    //printf("%d", buf);
-  }
-		
-  if (strcmp((char*)buf, "data"))	exit(EXIT_FAILURE);
-  /* Subchunk2Size (NumSamples * NumChannels * BitsPerSample / 8) */
-  fread(buf, 1, 4, stdin);
-  const unsigned int subchunk2_size = buf[0] + (buf[1] << 8) +
-    (buf[2] << 16) + (buf[3] << 24);
-  *num_samp = (subchunk2_size << 3) / (
-				       num_ch * *bits_per_samp);
-}
-
-// Read WAV sound datan (like in a .wav file) from stdin and place it in data[]
-int read_wav_data(int *data, unsigned int samp_rate,
-		  unsigned int bits_per_samp, unsigned int num_samp)
-{
-  unsigned char buf;
-  unsigned int i, j;
-  for (i=0; i < num_samp; ++i) {
-    if ((i % 1000) == 0) {
-      fprintf(stderr, "\rMinutes decoded: %4.2f\r", i/samp_rate/60.0);
-    }
-    unsigned int tmp = 0;
-    for (j=0; j != bits_per_samp; j+=8) {
-      if(!fread(&buf, 1, 1, stdin)) { // stdin ended short of the given file size. Must be coming streaming from FFmpeg etc.
-	num_samp = i; // Will also end the outer loop
-	break;
-      }
-      tmp += buf << j;
-    }
-		
-    data[i] = conv_bit_size(tmp, bits_per_samp);
-  }
-  fprintf(stderr, "\n");
-  return num_samp;
-}
-// Convert unsigned to signed integers
-int conv_bit_size(unsigned int in, int bps)
-{
-  const unsigned int max = (1 << (bps-1)) - 1;
-  return in > max ? in - (max<<1) : in;
 }
