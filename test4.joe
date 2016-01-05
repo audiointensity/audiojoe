@@ -1,0 +1,34 @@
+
+
+!start 
+
+text   "Go!"
+
+--
+
+text "One minute left!"
+
+15s
+text "Go faster!"
+
+30s 
+text "Only 15 seconds left!"
+
+14s
+text "Go over the edge!"
+
+1s
+
+!peak
+
+10s
+text "Now clean up..."
+
+--
+
+!peak
+
+--
+
+10s
+!peak
