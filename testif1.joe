@@ -1,0 +1,7 @@
+if 0
+   text "Zero"
+elseif 1
+   text "One"
+elseif 2
+   text "Two"
+endif

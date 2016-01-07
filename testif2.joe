@@ -1,0 +1,14 @@
+if 0
+   text "Zero"
+   if 0
+      text "Nested Zero"
+   elseif 1
+      text "Nested One"
+   elseif 2
+      text "Nested Two"
+   endif
+elseif 1
+   text "One"
+elseif 2
+   text "Two"
+endif

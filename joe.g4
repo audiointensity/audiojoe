@@ -6,22 +6,49 @@ joefile
 
 blocks
     : NEWLINE* block
-    | NEWLINE* block '--' SPACE? NEWLINE+ blocks
+    | NEWLINE* block '--' NEWLINE+ blocks
     ;
 
 block
-    : lines
+    : commands
     ;
 
-lines
-    : line SPACE? NEWLINE*
-    | line SPACE? NEWLINE+ lines
+commands
+    : command NEWLINE*
+    | command NEWLINE+ commands
     ;
 
-line
+command
     : event_directive
     | text_directive
     | time_directive
+    | if_block
+    ;
+
+if_block
+    :
+    | if_directive NEWLINE+
+        commands NEWLINE+
+      (elseif_chain)?
+      endif_directive
+    ;
+
+if_directive
+    : 'if' DIGIT+
+    ;
+
+elseif_chain
+    : elseif_directive NEWLINE+
+        commands NEWLINE+
+      (elseif_chain)?
+    ;
+
+elseif_directive
+    : 'elseif' DIGIT+
+    ;
+
+endif_directive
+    : 'endif'
     ;
 
 event_directive
@@ -29,7 +56,7 @@ event_directive
     ;
 
 text_directive
-    : 'text' SPACE STRING
+    : 'text' STRING
     ;
 
 time_directive
@@ -41,6 +68,8 @@ time_directive
     | (DIGIT+ 'm') (DIGIT+ 's')
     | (DIGIT+ 'h') (DIGIT+ 'm') (DIGIT+ 's')
     ;
+
+
 
 EVENT_NAME
     : 'start'
@@ -54,6 +83,7 @@ DIGIT
 
 SPACE
     : (' '|'\t')+
+        -> channel(HIDDEN)
     ;
 
 NEWLINE
