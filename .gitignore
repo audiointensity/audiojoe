@@ -27,10 +27,14 @@
 *.i*86
 *.x86_64
 *.hex
+*.class
+
+# Archives
+*.zip
 
 # Debug files
 *.dSYM/
 
 # Backup files
-*.c~
+*.*~
 
