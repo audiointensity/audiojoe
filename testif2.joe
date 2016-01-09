@@ -1,14 +1,16 @@
-if 0
+if A0
    text "Zero"
-   if 0
+   if A00
       text "Nested Zero"
-   elseif 1
+   elseif A01
       text "Nested One"
-   elseif 2
+   elseif A02
       text "Nested Two"
+   else
+      text "Nested Three"
    endif
-elseif 1
+elseif A1
    text "One"
-elseif 2
+elseif A2
    text "Two"
 endif

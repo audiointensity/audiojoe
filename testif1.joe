@@ -1,7 +1,7 @@
-if 0
+if A0
    text "Zero"
-elseif 1
+elseif A1
    text "One"
-elseif 2
+elseif A2
    text "Two"
 endif

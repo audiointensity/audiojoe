@@ -1,0 +1,37 @@
+random edge=60%
+
+!start
+text   "Go!"
+
+--
+
+text "One minute left!"
+
+15s
+text "Go faster!"
+
+30s 
+text "Only 15 seconds left!"
+14s
+if edge
+   text "Go over the edge!"
+else
+   text "Stop! Let go."
+endif
+
+1s
+!peak
+
+if edge
+   10s
+   text "Now clean up..."
+endif
+
+--
+
+!peak
+
+--
+
+10s
+!peak
